@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "pwm_task.h"
+#include "main_control_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +51,7 @@ osThreadId defaultTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-osThreadId pwmTaskHandle;
+osThreadId maincontrolTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -91,8 +91,9 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-	osThreadDef(pwmTask, pwm_Task, osPriorityNormal, 0, 256);
-  pwmTaskHandle = osThreadCreate(osThread(pwmTask), NULL);
+	osThreadDef(maincontrolTask, main_control_Task, osPriorityNormal, 0, 256);
+  maincontrolTaskHandle = osThreadCreate(osThread(maincontrolTask), NULL);
+	
   /* USER CODE END RTOS_THREADS */
 
 }

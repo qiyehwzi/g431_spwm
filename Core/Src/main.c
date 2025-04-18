@@ -19,6 +19,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -45,6 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+//uint16_t ADC_Value1,i;
 
 /* USER CODE END PV */
 
@@ -89,13 +92,25 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM3_Init();
-  MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-	HAL_TIM_PWM_Start_IT(&htim1,TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start_IT(&htim1,TIM_CHANNEL_2);
+	
+	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+
+	
 	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_4);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

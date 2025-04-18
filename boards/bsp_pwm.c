@@ -1,27 +1,10 @@
-#include "pwm_task.h"
+#include "bsp_pwm.h"
+#include "main_control_task.h"
 #include "cmsis_os.h"
 #include "gpio.h"
 #include "tim.h"
 
-int spwm_size = 1000;
-int change_duty;
-int change_duty_temp;
-float sin_value[];
-float sin_value_temp[];
-
-void pwm_Task(void const * argument)
-{
-	osDelay(200);
-  for(;;)
-  {
-		osDelay(1);
-//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,sin_value[change_duty]*(float)1000.0/(float)300.0);
-//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,sin_value[change_duty]*(float)1000.0/(float)300.0);
-  }
-}
-
-float sin_value_temp[] = {150,238,292,292,238,150,61,7,7,61};
-
+//spwm_size 1000
 float sin_value[] = 
 {
 		150,150,151,152,153,154,155,156,157,158,
@@ -126,34 +109,76 @@ float sin_value[] =
 		140,141,142,143,144,145,146,147,148,149
 };
 
+float sin_value_100[] = 
+{
+	150,159,168,178,187,196,205,213,222,230,
+	238,245,252,259,265,271,276,281,285,289,
+	292,295,297,298,299,300,299,298,297,295,
+	292,289,285,281,276,271,265,259,252,245,
+	238,230,222,213,205,196,187,178,168,159,
+	150,140,131,121,112,103,94,86,77,69,
+	61,54,47,40,34,28,23,18,14,10,
+	7,4,2,1,0,0,0,1,2,4,
+	7,10,14,18,23,28,34,40,47,54,
+	61,69,77,86,94,103,112,121,131,140
+};
+
+//Ñ­»·ÏÞ·ùº¯Êý
+int loop_int_constrain(int Input, int minValue, int maxValue)
+{
+    if (maxValue < minValue)
+    {
+        return Input;
+    }
+
+    if (Input > maxValue)
+    {
+        int len = maxValue - minValue;
+        while (Input > maxValue)
+        {
+            Input -= len;
+        }
+    }
+    else if (Input < minValue)
+    {
+        int len = maxValue - minValue;
+        while (Input < minValue)
+        {
+            Input += len;
+        }
+    }
+    return Input;
+}
+
 void TIM3_IRQHandler(void)
 {
-		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,sin_value[change_duty]*(float)1000.0/(float)300.0);
-		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,sin_value[change_duty]*(float)1000.0/(float)300.0);
-		if(change_duty >= 1000)
+//		if(control_converter.var_duty >= 1000)
+//		{
+//			control_converter.var_duty = 0;
+//			control_converter.var_duty++;
+//		}
+//		else
+//		{
+//			control_converter.var_duty++;
+//		}
+//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,sin_value[loop_int_constrain(control_converter.var_duty,0,999)]*(float)1000.0/(float)300.0);
+//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,sin_value[loop_int_constrain(control_converter.var_duty+500,0,999)]*(float)1000.0/(float)300.0);
+//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_3,sin_value[loop_int_constrain(control_converter.var_duty,0,999)]*(float)1000.0/(float)300.0);
+//		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_4,sin_value[loop_int_constrain(control_converter.var_duty+500,0,999)]*(float)1000.0/(float)300.0);
+		
+		if(control_converter.var_duty >= 100)
 		{
-			change_duty = 0;
-			change_duty++;
+			control_converter.var_duty = 0;
+			control_converter.var_duty++;
 		}
 		else
 		{
-			change_duty++;
+			control_converter.var_duty++;
 		}
+		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,sin_value_100[loop_int_constrain(control_converter.var_duty,0,99)]*(float)1000.0/(float)300.0);
+		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,sin_value_100[loop_int_constrain(control_converter.var_duty+50,0,99)]*(float)1000.0/(float)300.0);
+		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_3,sin_value_100[loop_int_constrain(control_converter.var_duty,0,99)]*(float)1000.0/(float)300.0);
+		__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_4,sin_value_100[loop_int_constrain(control_converter.var_duty+50,0,99)]*(float)1000.0/(float)300.0);
+		
 		HAL_TIM_IRQHandler(&htim3);
-}
-
-void TIM1_UP_TIM16_IRQHandler(void)
-{
-	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,sin_value[change_duty]*(float)10.0/(float)300.0);
-	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,sin_value[change_duty]*(float)10.0/(float)300.0);
-	if(change_duty_temp >= 10)
-	{
-		change_duty_temp = 0;
-		change_duty_temp++;
-	}
-	else
-	{
-		change_duty_temp++;
-	}
-  HAL_TIM_IRQHandler(&htim1);
 }

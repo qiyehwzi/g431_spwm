@@ -23,6 +23,9 @@ g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_gpio_ex.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_dma.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_dma_ex.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_cortex.h
+g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_adc.h
+g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_ll_adc.h
+g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_adc_ex.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_exti.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_flash.h
 g431_test\gpio.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_flash_ex.h
