@@ -38,8 +38,10 @@ void control_value_init(control_t *control_value_init)
 		first_order_filter_init(&control_value_init->voltage_filter[i], 0.001, adc_order_filter);
 	}
 	
-	const static fp32 dcdc_voltage_pid[3]={DCDC_VOLTAGE_KP,DCDC_VOLTAGE_KI,DCDC_VOLTAGE_KD};
-	PID_init(&control_value_init->dcdc_voltage_pid , PID_POSITION, dcdc_voltage_pid, DCDC_VOLTAGE_PID_MAX_OUT, DCDC_VOLTAGE_PID_MAX_IOUT);
+	const static fp32 dcdc_voltage1_pid[3]={DCDC_VOLTAGE1_KP,DCDC_VOLTAGE1_KI,DCDC_VOLTAGE1_KD};
+	const static fp32 dcdc_voltage2_pid[3]={DCDC_VOLTAGE2_KP,DCDC_VOLTAGE2_KI,DCDC_VOLTAGE2_KD};
+	PID_init(&control_value_init->dcdc_voltage1_pid , PID_POSITION, dcdc_voltage1_pid, DCDC_VOLTAGE1_PID_MAX_OUT, DCDC_VOLTAGE1_PID_MAX_IOUT);
+	PID_init(&control_value_init->dcdc_voltage2_pid , PID_POSITION, dcdc_voltage2_pid, DCDC_VOLTAGE2_PID_MAX_OUT, DCDC_VOLTAGE2_PID_MAX_IOUT);
 	
 	for(int i = 0; i < 4; i++)
 	{
@@ -52,7 +54,7 @@ void control_value_init(control_t *control_value_init)
 		control_value_init->current[i] = 0.0f;
 		control_value_init->voltage[i] = 0.0f;
 	}
-	control_value_init->voltage_set = 30.0f;
+	control_value_init->voltage_middle = 30.0f;
 	
 	control_value_init->Vin = 0.0f;
 }
@@ -62,11 +64,17 @@ void control_value_set(control_t *control_value_set)
 	control_value_set->current[0] = (control_value_set->AD_current_get[0] * Vref / resolution - current_a ) / current_b_1;
 	control_value_set->current[1] = (control_value_set->AD_current_get[1] * Vref / resolution - current_a ) / current_b_2;
 	control_value_set->current[2] = (control_value_set->AD_current_get[2] * Vref / resolution - current_a ) / current_b_3;
+	
+	//vin计算
 	for(int i = 0; i < 3; i++)
 	{
 		control_value_set->voltage[i] = control_value_set->AD_voltage_get[i] * Vref / resolution * voltage_stm_to_real;
 	}
 	
+	control_value_set -> i0_mul_r1 = control_value_set -> current_filter[0].out * input_resistance;
+	
+	PID_calc(&control_value_set->dcdc_voltage1_pid, control_value_set -> voltage_filter[0].out, control_value_set -> i0_mul_r1);
+	PID_calc(&control_value_set->dcdc_voltage2_pid, control_value_set -> voltage_filter[1].out, control_value_set -> voltage_middle);
 }
 
 void control_value_loop(control_t *control_value_loop)
@@ -82,49 +90,76 @@ void control_value_loop(control_t *control_value_loop)
 	HAL_ADC_Start_DMA(&hadc2,(uint32_t *)&control_value_loop->AD_voltage_get,3);
 	
 	//Vin计算
-	if(control_value_loop -> voltage[0] + 10.0f * control_value_loop -> current[0] < 0.0f)
+	if(control_value_loop -> voltage_filter[0].out + 10.0f * control_value_loop -> current_filter[0].out < 0.0f)
 	{
 		control_value_loop->Vin = 0.0f;
 	}
 	else
 	{
-		control_value_loop -> Vin = control_value_loop -> voltage[0] + 10.0f * control_value_loop -> current[0];
+		control_value_loop -> Vin = control_value_loop -> voltage_filter[0].out + 10.0f * control_value_loop -> current_filter[0].out;
 	}
 	
-	//第一级dcdc限幅
+	//第一级dcdc
+//	for(int i = 0; i < 2; i++)
+//	{
+//		if(((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 < 700) && ((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 > 200))
+//		{
+//			control_value_loop -> q_dcdc[i] = (1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000;
+//		}
+//		else if((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 >= 700)
+//		{
+//			control_value_loop -> q_dcdc[i] = 700;
+//		}
+//		else
+//		{
+//			control_value_loop -> q_dcdc[i] = 200;
+//		}
+//	}
+	
 	for(int i = 0; i < 2; i++)
 	{
-		if(((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 < 700) && ((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 > 200))
+		int pid_output = (int)control_value_loop->dcdc_voltage1_pid.out;
+		if (pid_output > 700) 
 		{
-			control_value_loop -> q_dcdc[i] = (1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000;
-		}
-		else if((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 >= 700)
+				pid_output = 700;
+		} else if (pid_output < 200) 
 		{
-			control_value_loop -> q_dcdc[i] = 700;
+				pid_output = 200;
 		}
-		else
-		{
-			control_value_loop -> q_dcdc[i] = 200;
-		}
+		control_value_loop->q_dcdc[i] = pid_output;
 	}
 	
-	//第二级dcdc限幅
+	//第二级dcdc
+//	for(int i = 2; i < 4; i++)
+//	{
+//		if((((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) < 700) && (((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) > 200))
+//		{
+//			control_value_loop -> q_dcdc[i] =  control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle * 1000;
+//		}
+//		else if((((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) > 700))
+//		{
+//			control_value_loop -> q_dcdc[i] = 700;
+//		}
+//		else
+//		{
+//			control_value_loop -> q_dcdc[i] = 200;
+//		}
+//	}
+	
 	for(int i = 2; i < 4; i++)
 	{
-		if(((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 < 700) && ((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 > 200))
+		int pid_output = (int)control_value_loop->dcdc_voltage2_pid.out;
+		if (pid_output > 700) 
 		{
-			control_value_loop -> q_dcdc[i] = (1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000;
-		}
-		else if((1 - (control_value_loop->Vin / control_value_loop -> voltage_set)) * 1000 >= 700)
+				pid_output = 700;
+		} else if (pid_output < 200) 
 		{
-			control_value_loop -> q_dcdc[i] = 700;
+				pid_output = 200;
 		}
-		else
-		{
-			control_value_loop -> q_dcdc[i] = 200;
-		}
+		control_value_loop->q_dcdc[i] = pid_output;
 	}
 	
+	//电压电流一阶低通滤波
 	for(int i = 0; i < 3; i++)
 	{
 		first_order_filter_cali(&control_value_loop->current_filter[i], control_value_loop->current[i]);
@@ -134,9 +169,5 @@ void control_value_loop(control_t *control_value_loop)
 	{
 		first_order_filter_cali(&control_value_loop->voltage_filter[i], control_value_loop->voltage[i]);
 	}
-	
-	
-//	PID_calc(&control_value_loop->dcdc_voltage_pid, control_value_loop->, control_value_loop->);
-
 //	control_value_loop-> = control_value_loop->dcdc_voltage_pid.out;
 }
