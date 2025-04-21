@@ -5,6 +5,7 @@ g431_test\bsp_pwm.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 g431_test\bsp_pwm.o: ../controller/pid.h
 g431_test\bsp_pwm.o: ../boards/struct_typedef.h
 g431_test\bsp_pwm.o: ../algorithm/user_lib.h
+g431_test\bsp_pwm.o: ../controller/TD.h
 g431_test\bsp_pwm.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 g431_test\bsp_pwm.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 g431_test\bsp_pwm.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h

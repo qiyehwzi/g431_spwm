@@ -46,6 +46,7 @@
 "g431_test\controller.o"
 "g431_test\pid.o"
 "g431_test\td.o"
+"g431_test\ads8688.o"
 --strict --scatter "g431_test\g431_test.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

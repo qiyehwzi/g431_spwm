@@ -51,3 +51,4 @@ g431_test\app_freertos.o: ../application/main_control_task.h
 g431_test\app_freertos.o: ../controller/pid.h
 g431_test\app_freertos.o: ../boards/struct_typedef.h
 g431_test\app_freertos.o: ../algorithm/user_lib.h
+g431_test\app_freertos.o: ../controller/TD.h

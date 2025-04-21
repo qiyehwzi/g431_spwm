@@ -51,3 +51,4 @@ g431_test\main.o: ../Core/Inc/adc.h
 g431_test\main.o: ../Core/Inc/dma.h
 g431_test\main.o: ../Core/Inc/tim.h
 g431_test\main.o: ../Core/Inc/gpio.h
+g431_test\main.o: ../device/ads8688.h

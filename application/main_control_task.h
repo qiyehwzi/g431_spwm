@@ -4,25 +4,26 @@
 #include "stdint.h"
 #include "pid.h"
 #include "user_lib.h"
+#include "TD.h"
 
-#define DCDC_VOLTAGE1_KP 0.0f
+#define DCDC_VOLTAGE1_KP 450.0f
 #define DCDC_VOLTAGE1_KI 0.0f
 #define DCDC_VOLTAGE1_KD 0.0f
 #define DCDC_VOLTAGE1_PID_MAX_OUT 700.0f
 #define DCDC_VOLTAGE1_PID_MAX_IOUT 0.0f
 
-#define DCDC_VOLTAGE2_KP 0.0f
+#define DCDC_VOLTAGE2_KP 120.0f
 #define DCDC_VOLTAGE2_KI 0.0f
-#define DCDC_VOLTAGE2_KD 0.0f
-#define DCDC_VOLTAGE2_PID_MAX_OUT 700.0f
-#define DCDC_VOLTAGE2_PID_MAX_IOUT 0.0f
+#define DCDC_VOLTAGE2_KD 6.0f
+#define DCDC_VOLTAGE2_PID_MAX_OUT 500.0f
+#define DCDC_VOLTAGE2_PID_MAX_IOUT 50.0f
 
 #define Vref 3.3f // 假设参考电压3.3V
 #define resolution 4096 // 12位ADC
 #define voltage_stm_to_real 10
 #define input_resistance 10.0f
 #define current_a 1.25f
-#define current_b_1 1.28000f
+#define current_b_1 0.92000f
 #define current_b_2 1.30304f
 #define current_b_3 1.39000f
 
@@ -44,6 +45,8 @@ typedef struct
 	
 	pid_type_def dcdc_voltage1_pid;
 	pid_type_def dcdc_voltage2_pid;
+	
+	TD_t voltage1_TD;
 	
 }control_t;
 

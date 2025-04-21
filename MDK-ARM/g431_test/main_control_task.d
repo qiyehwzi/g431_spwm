@@ -4,6 +4,7 @@ g431_test\main_control_task.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\
 g431_test\main_control_task.o: ../controller/pid.h
 g431_test\main_control_task.o: ../boards/struct_typedef.h
 g431_test\main_control_task.o: ../algorithm/user_lib.h
+g431_test\main_control_task.o: ../controller/TD.h
 g431_test\main_control_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 g431_test\main_control_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 g431_test\main_control_task.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
@@ -54,3 +55,5 @@ g431_test\main_control_task.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal
 g431_test\main_control_task.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h
 g431_test\main_control_task.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 g431_test\main_control_task.o: ../Core/Inc/adc.h
+g431_test\main_control_task.o: ../device/ads8688.h
+g431_test\main_control_task.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
