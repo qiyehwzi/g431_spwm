@@ -23,7 +23,7 @@
 #define voltage_stm_to_real 10
 #define input_resistance 10.0f
 #define current_a 1.25f
-#define current_b_1 0.92000f
+#define current_b_1 0.7727000f
 #define current_b_2 1.30304f
 #define current_b_3 1.39000f
 

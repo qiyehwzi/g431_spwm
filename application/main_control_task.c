@@ -135,9 +135,9 @@ void control_value_loop(control_t *control_value_loop)
 	{
 		pid_output1 = (int)(control_value_loop->dcdc_voltage1_pid.out);
 		
-		if (pid_output1 > 300)
+		if (pid_output1 > 400)
 		{
-				pid_output1 = 300;
+				pid_output1 = 400;
 		} 
 		else if (pid_output1 < -300) 
 		{
