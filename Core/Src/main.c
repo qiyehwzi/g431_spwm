@@ -19,14 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "adc.h"
-#include "dma.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ads8688.h"
+#include "ad7606b.h"
+#include "bsp_dwt.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +46,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-//uint16_t ADC_Value1,i;
 
 /* USER CODE END PV */
 
@@ -92,17 +90,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
-  MX_ADC1_Init();
-  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-		
-	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 
-	
 	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start_IT(&htim3,TIM_CHANNEL_3);
@@ -111,6 +102,11 @@ int main(void)
 	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start_IT(&htim2,TIM_CHANNEL_4);
+	
+	DWT_Init(150);
+	
+	AD7606B_Init();										/* AD7606BÒý½Å³õÊ¼»¯ */
+		
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

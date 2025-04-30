@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "main_control_task.h"
+#include "adc_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +53,8 @@ osThreadId defaultTaskHandle;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 osThreadId maincontrolTaskHandle;
+
+osThreadId adcTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -93,6 +96,9 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
 	osThreadDef(maincontrolTask, main_control_Task, osPriorityNormal, 0, 128);
   maincontrolTaskHandle = osThreadCreate(osThread(maincontrolTask), NULL);
+	
+	osThreadDef(adcTask, adc_Task, osPriorityNormal, 0, 128);
+  adcTaskHandle = osThreadCreate(osThread(adcTask), NULL);
 	
   /* USER CODE END RTOS_THREADS */
 
