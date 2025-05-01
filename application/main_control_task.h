@@ -14,9 +14,9 @@
 #define DCDC_VOLTAGE1_PID_MAX_IOUT 0.0f
 
 //最大功率跟踪pid
-#define DCDC_VOLTAGE2_KP 120.0f
+#define DCDC_VOLTAGE2_KP 900.0f
 #define DCDC_VOLTAGE2_KI 0.0f
-#define DCDC_VOLTAGE2_KD 6.0f
+#define DCDC_VOLTAGE2_KD 50.0f
 #define DCDC_VOLTAGE2_PID_MAX_OUT 500.0f
 #define DCDC_VOLTAGE2_PID_MAX_IOUT 50.0f
 
@@ -29,9 +29,6 @@
 #define current_b_1 0.7727000f
 #define current_b_2 1.30304f
 #define current_b_3 1.39000f
-
-//外接adc
-
 
 typedef struct
 {

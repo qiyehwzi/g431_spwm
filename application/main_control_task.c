@@ -30,17 +30,16 @@ void main_control_Task(void const * argument)
 
 void control_value_init(control_t *control_value_init)
 {
-	const static fp32 adc_order_filter[1] = {0.100};
+	const static fp32 adc_order_filter[1] = {0.3333333333};
 	
 	for(int i = 0; i < 3; i++)
 	{
-		first_order_filter_init(&control_value_init->current_filter[i], 0.003, adc_order_filter);
-
+		first_order_filter_init(&control_value_init->current_filter[i], 0.001, adc_order_filter);
 	}
 	
 	for(int i = 0; i < 3; i++)
 	{
-		first_order_filter_init(&control_value_init->voltage_filter[i], 0.003, adc_order_filter);
+		first_order_filter_init(&control_value_init->voltage_filter[i], 0.001, adc_order_filter);
 	}
 	
 	const static fp32 dcdc_voltage1_pid[3]={DCDC_VOLTAGE1_KP,DCDC_VOLTAGE1_KI,DCDC_VOLTAGE1_KD};
@@ -59,36 +58,37 @@ void control_value_init(control_t *control_value_init)
 	}
 	control_value_init->voltage_middle = 30.0f;
 	
-	control_value_init->Vin = 0.0f;
-	
+	control_value_init->Vin = 0.0f;	
 }
 
 void control_value_set(control_t *control_value_set)
 {
-	for(int i = 0; i < 3; i++)
-	{
-		control_value_set->current[i] = - control_value_set->AD7606B_Cal[i] / 1000.0f * 101.0f / 6.0f;
-	}
 	for(int i = 3; i < 6; i++)
 	{
-		control_value_set->voltage[i-3] = - control_value_set->AD7606B_Cal[i] / 1000.0f * 101.0f / 6.0f;
+		control_value_set->current[i-3] = - control_value_set->AD7606B_Cal[i] / 1000.0f * 101.0f / 6.0f;
 	}
+//	for(int i = 0; i < 3; i++)
+//	{
+		control_value_set->voltage[0] = - control_value_set->AD7606B_Cal[0] / 1000.0f * 101.0f / 6.0f;
+		control_value_set->voltage[1] = - control_value_set->AD7606B_Cal[1] / 1000.0f * 101.0f / 6.0f * 0.995776552f;
+		control_value_set->voltage[2] = - control_value_set->AD7606B_Cal[2] / 1000.0f * 101.0f / 6.0f;
+//	}
 	
 	control_value_set -> i0_mul_r1 = control_value_set -> current_filter[0].out * input_resistance;
 	
 	PID_calc(&control_value_set->dcdc_voltage1_pid, control_value_set -> voltage_filter[0].out, control_value_set -> i0_mul_r1);
-	PID_calc(&control_value_set->dcdc_voltage2_pid, control_value_set -> voltage_filter[1].out, control_value_set -> voltage_middle);//第2级dcdc输出电压
+	PID_calc(&control_value_set->dcdc_voltage2_pid, control_value_set -> voltage_filter[1].out, control_value_set -> voltage_middle);
 }
 
 void control_value_loop(control_t *control_value_loop)
 {
-	//DCDC占空比
+	//DCDC_D
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_1,control_value_loop->q_dcdc[0]);
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_2,control_value_loop->q_dcdc[1]);
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_3,control_value_loop->q_dcdc[2]);
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_4,control_value_loop->q_dcdc[3]);
 
-	//Vin计算
+	//Vin
 	if(control_value_loop -> voltage_filter[0].out + 10.0f * control_value_loop -> current_filter[0].out < 0.0f)
 	{
 		control_value_loop->Vin = 0.0f;
@@ -98,8 +98,19 @@ void control_value_loop(control_t *control_value_loop)
 		control_value_loop -> Vin = control_value_loop -> voltage_filter[0].out + 10.0f * control_value_loop -> current_filter[0].out;
 	}
 	
-	//第一级dcdc
-//	//开环
+	//first_filter
+	for(int i = 0; i < 3; i++)
+	{
+		first_order_filter_cali(&control_value_loop->current_filter[i], control_value_loop->current[i]);
+	}
+	
+	for(int i = 0; i < 3; i++)
+	{
+		first_order_filter_cali(&control_value_loop->voltage_filter[i], control_value_loop->voltage[i]);
+	}
+	
+	//first_dcdc
+//	//open_loop
 //	for(int i = 0; i < 2; i++)
 //	{
 //		if(((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 < 700) && ((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 > 200))
@@ -116,7 +127,7 @@ void control_value_loop(control_t *control_value_loop)
 //		}
 //	}
 	
-	//闭环
+	//close_loop
 	for(int i = 0; i < 2; i++)
 	{
 		pid_output1 = (int)(control_value_loop->dcdc_voltage1_pid.out);
@@ -129,11 +140,11 @@ void control_value_loop(control_t *control_value_loop)
 		{
 				pid_output1 = -300;
 		}
-		control_value_loop->q_dcdc[i] = 400 + pid_output1;//第一个DCDC上管占空比越大电压越高
+		control_value_loop->q_dcdc[i] = 400 + pid_output1;
 	}
 	
-	//第二级dcdc
-//	//开环
+	//second_dcdc
+//	//open_loop
 //	for(int i = 2; i < 4; i++)
 //	{
 //		if((((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) < 700) && (((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) > 200))
@@ -150,7 +161,7 @@ void control_value_loop(control_t *control_value_loop)
 //		}
 //	}
 	
-	//闭环
+	//close_loop
 	for(int i = 2; i < 4; i++)
 	{
 		pid_output2 = (int)(control_value_loop->dcdc_voltage2_pid.out);
@@ -161,19 +172,9 @@ void control_value_loop(control_t *control_value_loop)
 		{
 				pid_output2 = -300;
 		}
-		control_value_loop->q_dcdc[i] = 500 - pid_output2;//第二个DCDC上管占空比越大电压越高
+		control_value_loop->q_dcdc[i] = 500 - pid_output2;
 	}
 	
-	//电压电流一阶低通滤波
-	for(int i = 0; i < 3; i++)
-	{
-		first_order_filter_cali(&control_value_loop->current_filter[i], control_value_loop->current[i]);
-	}
-	
-	for(int i = 0; i < 3; i++)
-	{
-		first_order_filter_cali(&control_value_loop->voltage_filter[i], control_value_loop->voltage[i]);
-	}
 //	control_value_loop-> = control_value_loop->dcdc_voltage_pid.out;
 }
 
