@@ -34,3 +34,4 @@ g431_test\ad7606b.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim.h
 g431_test\ad7606b.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h
 g431_test\ad7606b.o: ../boards/bsp_spi.h
 g431_test\ad7606b.o: G:\keil\KeilMDK\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+g431_test\ad7606b.o: ../boards/bsp_dwt.h

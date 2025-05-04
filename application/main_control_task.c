@@ -12,6 +12,11 @@ control_t control_converter;
 int pid_output1;
 int pid_output2;
 
+int q_dcdc_temp_1 = 980;
+int q_dcdc_temp_2;
+
+int q_dcdc_temp1_test = 900;
+
 static void control_value_init(control_t *control_value_init);
 static void control_value_set(control_t *control_value_set);
 static void control_value_loop(control_t *control_value_loop);
@@ -24,13 +29,13 @@ void main_control_Task(void const * argument)
   {
 		control_value_set(&control_converter);
 		control_value_loop(&control_converter);
-    osDelay(1);
+    DWT_Delay(0.0001);
   }
 }
 
 void control_value_init(control_t *control_value_init)
 {
-	const static fp32 adc_order_filter[1] = {0.3333333333};
+	const static fp32 adc_order_filter[1] = {0.1};
 	
 	for(int i = 0; i < 3; i++)
 	{
@@ -49,39 +54,44 @@ void control_value_init(control_t *control_value_init)
 	
 	for(int i = 0; i < 4; i++)
 	{
-		control_value_init->q_dcdc[i] = 0;
+		control_value_init->q_dcdc[i] = 500;
 	}
 	for(int i = 0; i < 3; i++)
 	{
 		control_value_init->current[i] = 0.0f;
 		control_value_init->voltage[i] = 0.0f;
 	}
-	control_value_init->voltage_middle = 30.0f;
+	control_value_init->voltage_30 = 30.0f;
 	
 	control_value_init->Vin = 0.0f;	
+	
+	control_value_init->mppt_last_power = 0.0f;
+	control_value_init->mppt_step = 0.001f;
+	control_value_init->mppt_direction = -1;
 }
 
 void control_value_set(control_t *control_value_set)
 {
-	for(int i = 3; i < 6; i++)
-	{
-		control_value_set->current[i-3] = - control_value_set->AD7606B_Cal[i] / 1000.0f * 101.0f / 6.0f;
-	}
-//	for(int i = 0; i < 3; i++)
-//	{
-		control_value_set->voltage[0] = - control_value_set->AD7606B_Cal[0] / 1000.0f * 101.0f / 6.0f;
-		control_value_set->voltage[1] = - control_value_set->AD7606B_Cal[1] / 1000.0f * 101.0f / 6.0f * 0.995776552f;
-		control_value_set->voltage[2] = - control_value_set->AD7606B_Cal[2] / 1000.0f * 101.0f / 6.0f;
-//	}
+	
+	control_value_set->current[0] =	(control_value_set->AD7606B_Cal[3] / 1000.0f) * 1.216f - 0.453f;
+	
+	control_value_set->voltage[0] = - (control_value_set->AD7606B_Cal[0] / 1000.0f * 101.0f / 6.0f) * 1.01617f;
+	
+	control_value_set->voltage[1] = - (control_value_set->AD7606B_Cal[1] / 1000.0f * 101.0f / 6.0f) / 0.997f;
+
+	control_value_set->voltage[2] = - (control_value_set->AD7606B_Cal[2] / 1000.0f * 101.0f / 6.0f);
 	
 	control_value_set -> i0_mul_r1 = control_value_set -> current_filter[0].out * input_resistance;
+	control_value_set -> v_batterty_div_30 = (int)(control_value_set -> voltage_filter[2].out / control_value_set -> voltage_30 * 1000.0f);
 	
 	PID_calc(&control_value_set->dcdc_voltage1_pid, control_value_set -> voltage_filter[0].out, control_value_set -> i0_mul_r1);
-	PID_calc(&control_value_set->dcdc_voltage2_pid, control_value_set -> voltage_filter[1].out, control_value_set -> voltage_middle);
+	PID_calc(&control_value_set->dcdc_voltage2_pid, control_value_set -> voltage_filter[1].out, control_value_set -> voltage_30);
 }
 
 void control_value_loop(control_t *control_value_loop)
 {
+	static uint32_t task_counter = 0;  // 添加任务周期计数器
+	
 	//DCDC_D
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_1,control_value_loop->q_dcdc[0]);
 	__HAL_TIM_SetCompare(&htim2,TIM_CHANNEL_2,control_value_loop->q_dcdc[1]);
@@ -110,71 +120,140 @@ void control_value_loop(control_t *control_value_loop)
 	}
 	
 	//first_dcdc
-//	//open_loop
+
+	
+	//close_loop
 //	for(int i = 0; i < 2; i++)
 //	{
-//		if(((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 < 700) && ((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 > 200))
+//		pid_output1 = (int)(control_value_loop->dcdc_voltage1_pid.out);
+//		
+//		if (pid_output1 > 50)
 //		{
-//			control_value_loop -> q_dcdc[i] = (1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000;
+//				pid_output1 = 50;
+//		} 
+//		else if (pid_output1 < -500) 
+//		{
+//				pid_output1 = -500;
 //		}
-//		else if((1 - (control_value_loop->Vin / control_value_loop -> voltage_middle)) * 1000 >= 700)
+//		control_value_loop->q_dcdc[i] = 850;// + pid_output1;
+//	}
+
+	//close_loop
+//	if((task_counter % 2000) == 2)
+//	{
+//		// 计算当前输入功率
+//		control_value_loop->current_power = control_value_loop->voltage_filter[0].out * control_value_loop->current_filter[0].out;
+//		
+//		// 更新占空比
+//		q_dcdc_temp_1 -= (int)(control_value_loop->mppt_direction * control_value_loop->mppt_step * 1000);
+//		
+//		// 扰动观察法逻辑
+//		if (control_value_loop->current_power > control_value_loop->mppt_last_power) 
 //		{
-//			control_value_loop -> q_dcdc[i] = 700;
+//				// 功率增加，保持方向
+//				control_value_loop->mppt_direction *= 1;
+//		}
+//		else if(control_value_loop->current_power < control_value_loop->mppt_last_power) 
+//		{
+//				// 功率减少，反转方向
+//				control_value_loop->mppt_direction *= -1;
 //		}
 //		else
 //		{
-//			control_value_loop -> q_dcdc[i] = 200;
+//				goto GOON;
 //		}
+//		
+//		if (q_dcdc_temp_1 > 980) 
+//		{
+//				q_dcdc_temp_1 = 980;
+//		} 
+//		else if (q_dcdc_temp_1 < 600) 
+//		{
+//				q_dcdc_temp_1 = 600;
+//		}
+//		
+//		for (int i = 0; i < 2; i++) 
+//		{
+//			control_value_loop->q_dcdc[i] = q_dcdc_temp_1;
+//		}
+//		
+//		GOON:
+//		
+//		// 保存当前功率供下一周期比较
+//		control_value_loop->mppt_last_power = control_value_loop->current_power;
+
 //	}
-	
-	//close_loop
-	for(int i = 0; i < 2; i++)
+
+	if((task_counter % 200) == 2)
 	{
-		pid_output1 = (int)(control_value_loop->dcdc_voltage1_pid.out);
+		// 计算当前输入功率
+		control_value_loop->current_power = control_value_loop->voltage_filter[0].out * control_value_loop->current_filter[0].out;
 		
-		if (pid_output1 > 400)
+		// 更新占空比
+		q_dcdc_temp_1 -= (int)(control_value_loop->mppt_direction * control_value_loop->mppt_step * 1000);
+		
+		// 扰动观察法逻辑
+		if (control_value_loop->voltage_filter[0].out > control_value_loop->i0_mul_r1) 
 		{
-				pid_output1 = 400;
-		} 
-		else if (pid_output1 < -300) 
-		{
-				pid_output1 = -300;
+				// 功率增加，保持方向
+				control_value_loop->mppt_direction = 1;
 		}
-		control_value_loop->q_dcdc[i] = 400 + pid_output1;
+		else if(control_value_loop->voltage_filter[0].out < control_value_loop->i0_mul_r1) 
+		{
+				// 功率减少，反转方向
+				control_value_loop->mppt_direction = -1;
+		}
+		else
+		{
+				goto GOON;
+		}
+		
+		if (q_dcdc_temp_1 > 980) 
+		{
+				q_dcdc_temp_1 = 980;
+		} 
+		else if (q_dcdc_temp_1 < 400) 
+		{
+				q_dcdc_temp_1 = 400;
+		}
+		
+		for (int i = 0; i < 2; i++) 
+		{
+			control_value_loop->q_dcdc[i] = q_dcdc_temp_1;
+		}
+		
+		GOON:
+		
+		// 保存当前功率供下一周期比较
+		control_value_loop->mppt_last_power = control_value_loop->current_power;
+
 	}
 	
 	//second_dcdc
-//	//open_loop
-//	for(int i = 2; i < 4; i++)
-//	{
-//		if((((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) < 700) && (((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) > 200))
-//		{
-//			control_value_loop -> q_dcdc[i] =  control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle * 1000;
-//		}
-//		else if((((control_value_loop -> voltage_filter[2].out / control_value_loop -> voltage_middle) * 1000) > 700))
-//		{
-//			control_value_loop -> q_dcdc[i] = 700;
-//		}
-//		else
-//		{
-//			control_value_loop -> q_dcdc[i] = 200;
-//		}
-//	}
+
 	
-	//close_loop
 	for(int i = 2; i < 4; i++)
 	{
 		pid_output2 = (int)(control_value_loop->dcdc_voltage2_pid.out);
-		if (pid_output2 > 300) 
+		
+		q_dcdc_temp_2 = control_value_loop -> v_batterty_div_30 - pid_output2;
+		
+		if (q_dcdc_temp_2 > 980) 
 		{
-				pid_output2 = 300;
-		} else if (pid_output2 < -300) 
+				q_dcdc_temp_2 = 980;
+		} 
+		else if (q_dcdc_temp_2 < 250) 
 		{
-				pid_output2 = -300;
+				q_dcdc_temp_2 = 250;
 		}
-		control_value_loop->q_dcdc[i] = 500 - pid_output2;
+		
+		control_value_loop->q_dcdc[i] = q_dcdc_temp_2;
 	}
 	
-//	control_value_loop-> = control_value_loop->dcdc_voltage_pid.out;
+	if(task_counter > 200)
+	{
+		task_counter = 0;
+	}
+	task_counter++;
 }
 

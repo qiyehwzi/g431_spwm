@@ -15,7 +15,7 @@ void adc_Task(void const * argument)
   for(;;)
   {
 		AD7606B_Start_Convst();
-		osDelay(1);
+		DWT_Delay(0.0001);
 		while((AD7606B_BUSY == GPIO_PIN_SET))	/* 读取BUSY的状态，为低电平表示电平转换结束，可以读取数据 */
 		{
 			__NOP();
@@ -25,7 +25,7 @@ void adc_Task(void const * argument)
 		{
 			control_converter.AD7606B_Cal[i] = (float)((float)control_converter.AD7606B_Data[i]*AD7606B_Range/32768);
 		}
-		osDelay(1);
+		DWT_Delay(0.0001);
   }
 }
 

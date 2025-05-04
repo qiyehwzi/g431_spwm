@@ -1,4 +1,5 @@
 #include "bsp_spi.h"
+#include "bsp_dwt.h"
 
 /**
  * @brief       SPI1初始化
@@ -43,9 +44,14 @@ uint16_t spi1_read_write_16bit(uint16_t data)
 			AD7606B_SDI_L;
 		AD7606B_SCLK_L;	
 		txdata <<= 1;
+		
+//		DWT_Delay(0.0001);
+		
 		if(AD7606B_SDO)
 			rxdata++;
-		AD7606B_SCLK_H;			
+		AD7606B_SCLK_H;
+		
+//		DWT_Delay(0.0001);
 	}
     return rxdata; /* 返回收到的数据 */
 }

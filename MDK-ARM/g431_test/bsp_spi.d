@@ -33,3 +33,4 @@ g431_test\bsp_spi.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr.h
 g431_test\bsp_spi.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr_ex.h
 g431_test\bsp_spi.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim.h
 g431_test\bsp_spi.o: ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h
+g431_test\bsp_spi.o: ..\boards\bsp_dwt.h

@@ -1,5 +1,6 @@
 #include "ad7606b.h"
 #include "bsp_spi.h"
+#include "bsp_dwt.h"
 
 /**
  * @brief       AD7606B初始化
@@ -29,13 +30,13 @@ void AD7606B_Init(void)
 	AD7606B_CNT_H;
 	AD7606B_CS_H;
 	AD7606B_WR_H;
-	HAL_Delay(10);
+	DWT_Delay(0.010);
 	
 	// 复位
 	AD7606B_RST_H;
-	HAL_Delay(1);
+	DWT_Delay(0.001);
 	AD7606B_RST_L;
-	HAL_Delay(100);
+	DWT_Delay(0.100);
 	
 	AD7606B_Read_Reg(0x02);	// 对寄存器写入操作前需要对任意寄存器执行一次读取操作，使得AD7606B进入寄存器操作模式
 	AD7606B_Write_Reg(0x02,0x00);//配置为单线Doutx模式
